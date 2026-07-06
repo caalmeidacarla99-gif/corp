@@ -266,15 +266,18 @@ function deletePilar(){if(!_pilarEditKey)return;var counts={};EVENTS.forEach(fun
   if(use>0){if(!confirm('Este pilar tem '+use+' evento(s). Excluir mesmo assim?'))return}else{if(!confirm('Excluir este pilar?'))return}
   PILARES=PILARES.filter(function(x){return x.key!==_pilarEditKey});savePilaresForTab();visible.delete(_pilarEditKey);rebuildPilarSelects();render();renderEventList();renderPilarList();closePilarModal();toast('Pilar excluído ✓')}
 function resetPilares(){if(!confirm('Restaurar pilares padrão desta aba?'))return;PILARES=JSON.parse(JSON.stringify(currentTab().defaultPilares));savePilaresForTab();visible=new Set(PILARES.map(function(p){return p.key}));rebuildPilarSelects();render();renderEventList();renderPilarList();toast('Pilares restaurados ✓')}
-async function reloadFromJS(){var icon=document.getElementById('reloadIcon');icon.classList.add('spin');try{var t=currentTab();var url=t.jsFile+'?v='+Date.now();var r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);var text=await r.text();var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=text.match(re);
-  if(!m)throw new Error('Formato inválido');
-  var pm={};PILARES.forEach(function(p){pm[p.key]=p});var arr=normalizeEvents(JSON.parse(m[1]),pm);
-  if(!arr.length){toast('⚠ Sem eventos');return}
-  var oh=hashEvents(EVENTS),nh=hashEvents(arr);
-  if(oh===nh){toast('✓ Sem alterações ('+arr.length+' eventos)');reloadCfg.lastReload=new Date().toISOString();saveReloadCfgLocal();updateLastReload();return}
-  EVENTS=arr;persist();render();renderEventList();updateContext();reloadCfg.lastReload=new Date().toISOString();saveReloadCfgLocal();updateLastReload();
-  toast('🔄 Atualizado! '+arr.length+' eventos');
-}catch(e){console.error(e);toast('❌ Erro: '+e.message)}finally{icon.classList.remove('spin')}}
+function reloadFromJS(){var icon=document.getElementById('reloadIcon');icon.classList.add('spin');var t=currentTab();var s=document.createElement('script');s.src=t.jsFile+'?v='+Date.now();
+  function cleanup(){icon.classList.remove('spin');if(s.parentNode)s.parentNode.removeChild(s)}
+  s.onload=function(){try{var raw=window[t.globalVar];if(typeof raw==='undefined')throw new Error('Variável '+t.globalVar+' não encontrada em '+t.jsFile);
+    var pm={};PILARES.forEach(function(p){pm[p.key]=p});var arr=normalizeEvents(raw,pm);
+    if(!arr.length){toast('⚠ Sem eventos');return}
+    var oh=hashEvents(EVENTS),nh=hashEvents(arr);
+    if(oh===nh){toast('✓ Sem alterações ('+arr.length+' eventos)')}
+    else{EVENTS=arr;persist();render();renderEventList();updateContext();toast('🔄 Atualizado! '+arr.length+' eventos')}
+    reloadCfg.lastReload=new Date().toISOString();saveReloadCfgLocal();updateLastReload();
+  }catch(e){console.error(e);toast('❌ Erro: '+e.message)}finally{cleanup()}};
+  s.onerror=function(){toast('❌ Erro ao carregar '+t.jsFile);cleanup()};
+  document.head.appendChild(s)}
 function updateLastReload(){var el=document.getElementById('lastReload');if(reloadCfg.lastReload){var d=new Date(reloadCfg.lastReload);el.textContent='Última atualização: '+d.toLocaleTimeString('pt-BR')}else{el.textContent='Última atualização: —'}}
 function setupAutoReload(){if(reloadTimer){clearInterval(reloadTimer);reloadTimer=null}if(reloadCfg.autoReload){reloadTimer=setInterval(function(){reloadFromJS()},reloadCfg.interval)}}
 function saveReloadConfig(){reloadCfg.autoReload=document.getElementById('cfgAutoReload').checked;reloadCfg.interval=parseInt(document.getElementById('cfgReloadInterval').value);saveReloadCfgLocal();setupAutoReload();toast('Config salva ✓')}
