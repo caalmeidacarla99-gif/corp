@@ -142,7 +142,7 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
   <span class="file-indicator fi-none" id="fileInd">📁 Sem arquivo</span>
   <button class="hbtn reload" onclick="reloadFromJS()"><span id="reloadIcon">🔄</span> RECARREGAR</button>
   <button class="hbtn" onclick="document.getElementById('loadFileInput').click()">📂 CARREGAR</button>
-  <input type="file" id="loadFileInput" accept=".js" style="display:none">
+  <input type="file" id="loadFileInput" accept=".js" autocomplete="off" style="display:none">
   <button class="hbtn primary" onclick="saveToFile()">💾 SALVAR</button>
   <button class="hbtn" id="fabEdit">✏️ Gerenciar</button>
 </div></div>
@@ -216,7 +216,7 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
     <div class="field full" id="addDateRangeField" style="display:none"><label>Período (De — Até)</label><div style="display:flex;gap:8px"><input type="date" id="addDateStart" style="flex:1"><input type="date" id="addDateEnd" style="flex:1"></div></div>
     <div class="field"><label>Pilar</label><select id="addPilar"></select></div>
     <div class="field full"><label>Descrição</label><textarea id="addText" placeholder="Texto do evento"></textarea></div></div>
-    <div class="btn-row"><button class="pbtn primary" onclick="addEvent()">+ Adicionar</button><button class="pbtn" onclick="exportJSON()">⬇ Exportar</button><label class="pbtn" style="cursor:pointer">⬆ Importar<input type="file" id="importFile" accept=".json" style="display:none"></label><button class="pbtn warn" onclick="resetDefault()">↺ Restaurar</button></div>
+    <div class="btn-row"><button class="pbtn primary" onclick="addEvent()">+ Adicionar</button><button class="pbtn" onclick="exportJSON()">⬇ Exportar</button><label class="pbtn" style="cursor:pointer">⬆ Importar<input type="file" id="importFile" accept=".json" autocomplete="off" style="display:none"></label><button class="pbtn warn" onclick="resetDefault()">↺ Restaurar</button></div>
   </div>
   <div class="event-list" id="eventList"></div>
 </div>
@@ -320,7 +320,7 @@ async function saveToFile(){try{var t=currentTab();var c='// '+t.jsFile+' \u2014
   if(!_fileHandle){[_fileHandle]=await window.showOpenFilePicker({types:[{description:'JS',accept:{'application/javascript':['.js']}}],multiple:false})}
   var w=await _fileHandle.createWritable();await w.write(c);await w.close();persist();updateFileIndicator();
   toast('💾 Salvo! '+EVENTS.length+' eventos')}catch(e){if(e.name==='AbortError')return;console.error(e);alert('Erro: '+e.message)}}
-document.getElementById('loadFileInput').onchange=function(e){var f=e.target.files[0];if(!f)return;var t=currentTab();var r=new FileReader();
+document.getElementById('loadFileInput').onchange=function(e){var f=e.target.files[0];if(!f||!f.size)return;var t=currentTab();var r=new FileReader();
   r.onload=function(ev){try{var txt=ev.target.result;var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=txt.match(re);
     if(!m)throw new Error('Formato inválido');
     var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(JSON.parse(m[1]),pm);
@@ -369,7 +369,7 @@ function addEvent(){var p=document.getElementById('addPilar').value,t=document.g
     EVENTS.push({d:d,p:p,t:t});toast('Adicionado ✓')}
   EVENTS.sort(function(a,b){return a.d.localeCompare(b.d)||a.p.localeCompare(b.p)||a.t.localeCompare(b.t)});document.getElementById('addText').value='';persist();render();renderEventList();renderPilarList();updateContext()}
 function exportJSON(){var b=new Blob([JSON.stringify({events:EVENTS,pilares:PILARES},null,2)],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');a.href=u;a.download=ACTIVE_TAB+'-eventos-2026.json';a.click();URL.revokeObjectURL(u);toast('Exportado ✓')}
-document.getElementById('importFile').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(data.pilares&&Array.isArray(data.pilares)&&data.pilares.length){PILARES=data.pilares;savePilaresForTab();visible=new Set(PILARES.map(function(p){return p.key}));rebuildPilarSelects()}var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(data,pm);if(!a.length)throw 1;EVENTS=a;persist();render();renderEventList();renderPilarList();updateContext();toast(a.length+' importados ✓')}catch(x){toast('JSON inválido')}e.target.value=''};r.readAsText(f)};
+document.getElementById('importFile').onchange=function(e){var f=e.target.files[0];if(!f||!f.size)return;var r=new FileReader();r.onload=function(ev){try{var data=JSON.parse(ev.target.result);if(data.pilares&&Array.isArray(data.pilares)&&data.pilares.length){PILARES=data.pilares;savePilaresForTab();visible=new Set(PILARES.map(function(p){return p.key}));rebuildPilarSelects()}var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(data,pm);if(!a.length)throw 1;EVENTS=a;persist();render();renderEventList();renderPilarList();updateContext();toast(a.length+' importados ✓')}catch(x){toast('JSON inválido')}e.target.value=''};r.readAsText(f)};
 function resetDefault(){if(!confirm('Restaurar padrão? Isso apaga todos os eventos.'))return;EVENTS=[];persist();render();renderEventList();renderPilarList();updateContext();toast('Restaurado ✓')}
 function renderEventList(){var ct=document.getElementById('eventList');ct.innerHTML='';var pm=currentPilarMap();var g={};EVENTS.forEach(function(e,i){var m=parseInt(e.d.split('-')[1]);(g[m]||(g[m]=[])).push({d:e.d,p:e.p,t:e.t,idx:i})});var ms=Object.keys(g).map(Number).sort(function(a,b){return a-b});
   if(!ms.length){ct.innerHTML='<p style="padding:20px;color:var(--dim);text-align:center">Nenhum evento.</p>';return}
@@ -380,7 +380,7 @@ function renderEventList(){var ct=document.getElementById('eventList');ct.innerH
       var bs=rw.querySelectorAll('.evt-btn');bs[0].addEventListener('click',function(){showEditModal(ev.idx)});
       bs[1].addEventListener('click',function(){if(confirm('Excluir "'+ev.t+'"?')){EVENTS.splice(ev.idx,1);persist();render();renderEventList();renderPilarList();updateContext();toast('Excluído ✓')}});dv.appendChild(rw)});ct.appendChild(dv)})}
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2400)}
-(function init(){function doInit(){PILARES=loadPilaresForTab(ACTIVE_TAB);EVENTS=loadEventsForTab(ACTIVE_TAB);visible=new Set(PILARES.map(function(p){return p.key}));document.getElementById('tabGeral').classList.toggle('active',ACTIVE_TAB==='geral');document.getElementById('tabWp').classList.toggle('active',ACTIVE_TAB==='wp');rebuildPilarSelects();setupAutoReload();updateLastReload();render();updateFileIndicator();updateContext();renderEventList()}
+(function init(){function doInit(){document.getElementById('loadFileInput').value='';document.getElementById('importFile').value='';PILARES=loadPilaresForTab(ACTIVE_TAB);EVENTS=loadEventsForTab(ACTIVE_TAB);visible=new Set(PILARES.map(function(p){return p.key}));document.getElementById('tabGeral').classList.toggle('active',ACTIVE_TAB==='geral');document.getElementById('tabWp').classList.toggle('active',ACTIVE_TAB==='wp');rebuildPilarSelects();setupAutoReload();updateLastReload();render();updateFileIndicator();updateContext();renderEventList()}
   var tries=0;function check(){if((window._geralLoaded!==undefined&&window._wpLoaded!==undefined)||tries>30){doInit()}else{tries++;setTimeout(check,100)}}check();
 })();
 </script>
