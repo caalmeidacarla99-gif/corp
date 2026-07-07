@@ -141,7 +141,8 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
   <span class="last-reload" id="lastReload">Última atualização: —</span>
   <span class="file-indicator fi-none" id="fileInd">📁 Sem arquivo</span>
   <button class="hbtn reload" onclick="reloadFromJS()"><span id="reloadIcon">🔄</span> RECARREGAR</button>
-  <button class="hbtn" onclick="loadFromFile()">📂 CARREGAR</button>
+  <button class="hbtn" onclick="document.getElementById('loadFileInput').click()">📂 CARREGAR</button>
+  <input type="file" id="loadFileInput" accept=".js" style="display:none">
   <button class="hbtn primary" onclick="saveToFile()">💾 SALVAR</button>
   <button class="hbtn" id="fabEdit">✏️ Gerenciar</button>
 </div></div>
@@ -319,11 +320,17 @@ async function saveToFile(){try{var t=currentTab();var c='// '+t.jsFile+' \u2014
   if(!_fileHandle){[_fileHandle]=await window.showOpenFilePicker({types:[{description:'JS',accept:{'application/javascript':['.js']}}],multiple:false})}
   var w=await _fileHandle.createWritable();await w.write(c);await w.close();persist();updateFileIndicator();
   toast('💾 Salvo! '+EVENTS.length+' eventos')}catch(e){if(e.name==='AbortError')return;console.error(e);alert('Erro: '+e.message)}}
-async function loadFromFile(){try{[_fileHandle]=await window.showOpenFilePicker({types:[{description:'JS',accept:{'application/javascript':['.js']}}],multiple:false});
-  var t=currentTab();var f=await _fileHandle.getFile(),txt=await f.text();
-  var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=txt.match(re);
-  if(m){var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(JSON.parse(m[1]),pm);if(a.length){EVENTS=a;persist();render();renderEventList();renderPilarList();updateFileIndicator();updateContext();toast('📂 '+a.length+' eventos');return}}
-  toast('⚠ Nenhum evento válido')}catch(e){if(e.name==='AbortError')return;console.error(e);toast('Erro')}}
+document.getElementById('loadFileInput').onchange=function(e){var f=e.target.files[0];if(!f)return;var t=currentTab();var r=new FileReader();
+  r.onload=function(ev){try{var txt=ev.target.result;var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=txt.match(re);
+    if(!m)throw new Error('Formato inválido');
+    var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(JSON.parse(m[1]),pm);
+    if(!a.length)throw new Error('Nenhum evento válido');
+    EVENTS=a;persist();render();renderEventList();renderPilarList();updateContext();
+    var el=document.getElementById('fileInd');el.className='file-indicator fi-ok';el.textContent='📁 '+f.name;
+    toast('📂 '+a.length+' eventos')
+  }catch(err){console.error(err);toast('⚠ '+err.message)}};
+  r.onerror=function(){toast('Erro ao ler arquivo')};
+  r.readAsText(f);e.target.value=''};
 function updateFileIndicator(){var el=document.getElementById('fileInd');if(_fileHandle){el.className='file-indicator fi-ok';el.textContent='📁 '+_fileHandle.name}else{el.className='file-indicator fi-none';el.textContent='📁 Sem arquivo'}}
 document.addEventListener('keydown',function(e){if(e.ctrlKey&&e.key==='s'){e.preventDefault();saveToFile()}});
 function buildEventIndex(){var idx={};EVENTS.forEach(function(e){if(!idx[e.d])idx[e.d]=[];idx[e.d].push(e)});return idx}
