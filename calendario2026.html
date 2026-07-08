@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Calendário Merchandising 2026</title>
-<script>
-(function(){function ld(src,flag){var s=document.createElement("script");s.src=src+"?v="+Date.now();s.onload=function(){window[flag]=true};s.onerror=function(){window[flag]=false};document.head.appendChild(s)}ld("calendario_data.js","_geralLoaded");ld("posts_viva_engage.js","_wpLoaded")})();
-</script>
 <style>
 :root{--font:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;--bg:#FAFBFC;--paper:#FFF;--border:#E2E6EA;--border-md:#C8CED4;--text:#1a1a2e;--muted:#5A6270;--dim:#9AA0A8;--header-1:#1a237e;--header-2:#4472C4;--radius:8px;--radius-lg:12px;--ok:#2E7D32;--warn:#E65100;--err:#C62828;--c-com:#4472C4}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -200,10 +197,9 @@ body{font-family:var(--font);font-size:13px;color:var(--text);background:var(--b
 <div class="panel" id="panel">
   <div class="panel-header"><h2>📋 Gerenciar</h2><button class="panel-close" id="panelClose">✕</button></div>
   <div class="ps"><div class="tab-context">Aba: <b id="ctxTab">Calendário Geral</b> • <b id="ctxCount">0</b> eventos • arquivo: <b id="ctxFile">calendario_data.js</b></div></div>
-  <div class="ps"><h3>🔄 Auto-Recarregar</h3>
-    <div class="help-box">Busca atualizações do arquivo <code>.js</code> da aba atual periodicamente.</div>
-    <label class="switch full"><input type="checkbox" id="cfgAutoReload"> Verificar a cada <select id="cfgReloadInterval" style="margin-left:4px;padding:3px 6px;border-radius:4px;border:1px solid var(--border-md);font-size:11px"><option value="120000">2 min</option><option value="300000" selected>5 min</option><option value="600000">10 min</option><option value="1800000">30 min</option></select></label>
-    <div class="btn-row"><button class="pbtn primary" onclick="saveReloadConfig()">💾 Salvar</button><button class="pbtn" onclick="reloadFromJS()">🔄 Recarregar agora</button></div>
+  <div class="ps"><h3>🔄 Recarregar dados</h3>
+    <div class="help-box">Navegadores não permitem verificar arquivos locais em segundo plano sem um clique — selecione o arquivo <code>.js</code> da aba atual para atualizar os dados.</div>
+    <div class="btn-row"><button class="pbtn primary" onclick="reloadFromJS()">🔄 Recarregar agora</button></div>
   </div>
   <div class="ps"><h3>🏷️ Gerenciar Pilares</h3>
     <div class="help-box">Personalize os pilares (categorias) da aba atual. As alterações são salvas automaticamente.</div>
@@ -227,7 +223,7 @@ var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto
 var DIAS_PT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 var DEFAULT_PILARES_GERAL=[{key:'com',label:'Comunicação',color:'#4472C4'},{key:'inc',label:'Incentivos',color:'#70AD47'},{key:'pro',label:'Processos',color:'#ED7D31'},{key:'out',label:'Outros',color:'#7030A0'}];
 var DEFAULT_PILARES_WP=[{key:'camp',label:'Campanha',color:'#E91E63'},{key:'eng',label:'Engajamento',color:'#00BCD4'},{key:'com',label:'Comunicado',color:'#4472C4'},{key:'cel',label:'Celebração',color:'#FFB300'}];
-var TABS={geral:{defaultPilares:DEFAULT_PILARES_GERAL,pilaresKey:'cal_pilares_geral',storageKey:'cal_cem_s2',globalVar:'CAL_EVENTS_DATA',jsFile:'calendario_data.js',loadedFlag:'_geralLoaded',label:'Calendário Geral'},wp:{defaultPilares:DEFAULT_PILARES_WP,pilaresKey:'cal_pilares_wp',storageKey:'cal_wp_s2',globalVar:'WP_EVENTS_DATA',jsFile:'posts_viva_engage.js',loadedFlag:'_wpLoaded',label:'Viva Engage'}};
+var TABS={geral:{defaultPilares:DEFAULT_PILARES_GERAL,pilaresKey:'cal_pilares_geral',storageKey:'cal_cem_s2',globalVar:'CAL_EVENTS_DATA',jsFile:'calendario_data.js',label:'Calendário Geral'},wp:{defaultPilares:DEFAULT_PILARES_WP,pilaresKey:'cal_pilares_wp',storageKey:'cal_wp_s2',globalVar:'WP_EVENTS_DATA',jsFile:'posts_viva_engage.js',label:'Viva Engage'}};
 var ACTIVE_TAB=localStorage.getItem('cal_active_tab')||'geral';
 var RELOAD_KEY='cal_rl_cfg';
 function currentTab(){return TABS[ACTIVE_TAB]}
@@ -243,7 +239,7 @@ function loadEventsForTab(tabKey){var t=TABS[tabKey],pil=loadPilaresForTab(tabKe
 function persist(){localStorage.setItem(currentTab().storageKey,JSON.stringify(EVENTS))}
 function loadReloadCfg(){try{return Object.assign({autoReload:false,interval:300000,lastReload:''},JSON.parse(localStorage.getItem(RELOAD_KEY)||'{}'))}catch(e){return{autoReload:false,interval:300000,lastReload:''}}}
 function saveReloadCfgLocal(){localStorage.setItem(RELOAD_KEY,JSON.stringify(reloadCfg))}
-var PILARES=[],EVENTS=[],reloadCfg=loadReloadCfg(),currentMonth=new Date().getMonth()+1,visible=new Set(),reloadTimer=null,_editIdx=-1,_popupDate='',_fileHandle=null,_pilarEditKey=null;
+var PILARES=[],EVENTS=[],reloadCfg=loadReloadCfg(),currentMonth=new Date().getMonth()+1,visible=new Set(),_editIdx=-1,_popupDate='',_fileHandle=null,_pilarEditKey=null;
 var periodMode=false,periodStart=null,periodEnd=null;
 function parseISODate(s){var p=s.split('-');return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]))}
 function dateRangeArray(startStr,endStr){var s=parseISODate(startStr),e=parseISODate(endStr);if(s>e)return null;var arr=[],cur=new Date(s);while(cur<=e){arr.push(fmtDate(cur));cur.setDate(cur.getDate()+1)}return arr}
@@ -279,21 +275,8 @@ function deletePilar(){if(!_pilarEditKey)return;var counts={};EVENTS.forEach(fun
   if(use>0){if(!confirm('Este pilar tem '+use+' evento(s). Excluir mesmo assim?'))return}else{if(!confirm('Excluir este pilar?'))return}
   PILARES=PILARES.filter(function(x){return x.key!==_pilarEditKey});savePilaresForTab();visible.delete(_pilarEditKey);rebuildPilarSelects();render();renderEventList();renderPilarList();closePilarModal();toast('Pilar excluído ✓')}
 function resetPilares(){if(!confirm('Restaurar pilares padrão desta aba?'))return;PILARES=JSON.parse(JSON.stringify(currentTab().defaultPilares));savePilaresForTab();visible=new Set(PILARES.map(function(p){return p.key}));rebuildPilarSelects();render();renderEventList();renderPilarList();toast('Pilares restaurados ✓')}
-function reloadFromJS(){var icon=document.getElementById('reloadIcon');icon.classList.add('spin');var t=currentTab();var s=document.createElement('script');s.src=t.jsFile+'?v='+Date.now();
-  function cleanup(){icon.classList.remove('spin');if(s.parentNode)s.parentNode.removeChild(s)}
-  s.onload=function(){try{var raw=window[t.globalVar];if(typeof raw==='undefined')throw new Error('Variável '+t.globalVar+' não encontrada em '+t.jsFile);
-    var pm={};PILARES.forEach(function(p){pm[p.key]=p});var arr=normalizeEvents(raw,pm);
-    if(!arr.length){toast('⚠ Sem eventos');return}
-    var oh=hashEvents(EVENTS),nh=hashEvents(arr);
-    if(oh===nh){toast('✓ Sem alterações ('+arr.length+' eventos)')}
-    else{EVENTS=arr;persist();render();renderEventList();updateContext();toast('🔄 Atualizado! '+arr.length+' eventos')}
-    reloadCfg.lastReload=new Date().toISOString();saveReloadCfgLocal();updateLastReload();
-  }catch(e){console.error(e);toast('❌ Erro: '+e.message)}finally{cleanup()}};
-  s.onerror=function(){toast('❌ Erro ao carregar '+t.jsFile);cleanup()};
-  document.head.appendChild(s)}
+function reloadFromJS(){document.getElementById('loadFileInput').click()}
 function updateLastReload(){var el=document.getElementById('lastReload');if(reloadCfg.lastReload){var d=new Date(reloadCfg.lastReload);el.textContent='Última atualização: '+d.toLocaleTimeString('pt-BR')}else{el.textContent='Última atualização: —'}}
-function setupAutoReload(){if(reloadTimer){clearInterval(reloadTimer);reloadTimer=null}if(reloadCfg.autoReload){reloadTimer=setInterval(function(){reloadFromJS()},reloadCfg.interval)}}
-function saveReloadConfig(){reloadCfg.autoReload=document.getElementById('cfgAutoReload').checked;reloadCfg.interval=parseInt(document.getElementById('cfgReloadInterval').value);saveReloadCfgLocal();setupAutoReload();toast('Config salva ✓')}
 function showEditModal(idx,pre){_editIdx=idx;var m=document.getElementById('editModal'),o=document.getElementById('editOverlay'),t=document.getElementById('emTitle'),d=document.getElementById('emDeleteBtn'),modeField=document.getElementById('emModeField');
   setEmMode('fixa');
   if(idx>=0){var ev=EVENTS[idx];document.getElementById('emDate').value=ev.d;document.getElementById('emPilar').value=ev.p;document.getElementById('emText').value=ev.t;t.textContent='✏️ Editar Evento';d.style.display='';modeField.style.display='none'}
@@ -321,12 +304,13 @@ async function saveToFile(){try{var t=currentTab();var c='// '+t.jsFile+' \u2014
   var w=await _fileHandle.createWritable();await w.write(c);await w.close();persist();updateFileIndicator();
   toast('💾 Salvo! '+EVENTS.length+' eventos')}catch(e){if(e.name==='AbortError')return;console.error(e);alert('Erro: '+e.message)}}
 document.getElementById('loadFileInput').onchange=function(e){var f=e.target.files[0];if(!f||!f.size)return;var t=currentTab();var r=new FileReader();
-  r.onload=function(ev){try{var txt=ev.target.result;var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=txt.match(re);
+  r.onload=function(ev){try{var txt=ev.target.result.replace(/^\s*\/\/.*$/gm,'');var re=new RegExp(t.globalVar+'\\s*=\\s*(\\[[\\s\\S]*?\\]);?');var m=txt.match(re);
     if(!m)throw new Error('Formato inválido');
     var pm={};PILARES.forEach(function(p){pm[p.key]=p});var a=normalizeEvents(JSON.parse(m[1]),pm);
     if(!a.length)throw new Error('Nenhum evento válido');
     EVENTS=a;persist();render();renderEventList();renderPilarList();updateContext();
     var el=document.getElementById('fileInd');el.className='file-indicator fi-ok';el.textContent='📁 '+f.name;
+    reloadCfg.lastReload=new Date().toISOString();saveReloadCfgLocal();updateLastReload();
     toast('📂 '+a.length+' eventos')
   }catch(err){console.error(err);toast('⚠ '+err.message)}};
   r.onerror=function(){toast('Erro ao ler arquivo')};
@@ -353,10 +337,9 @@ function closeDPO(e){var p=document.getElementById('dayPopup');if(!p.contains(e.
 function closePopup(){document.getElementById('dayPopup').classList.remove('on')}
 function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 var panelEl=document.getElementById('panel'),overlayEl=document.getElementById('panelOverlay');
-document.getElementById('fabEdit').onclick=function(){panelEl.classList.add('open');overlayEl.classList.add('open');fillReloadForm();renderEventList();renderPilarList();updateContext()};
+document.getElementById('fabEdit').onclick=function(){panelEl.classList.add('open');overlayEl.classList.add('open');renderEventList();renderPilarList();updateContext()};
 document.getElementById('panelClose').onclick=closePanel;overlayEl.onclick=closePanel;
 function closePanel(){panelEl.classList.remove('open');overlayEl.classList.remove('open')}
-function fillReloadForm(){document.getElementById('cfgAutoReload').checked=!!reloadCfg.autoReload;document.getElementById('cfgReloadInterval').value=String(reloadCfg.interval||300000)}
 function addEvent(){var p=document.getElementById('addPilar').value,t=document.getElementById('addText').value.trim();
   if(!t){toast('Preencha a descrição');return}
   if(_addMode==='periodo'){var sVal=document.getElementById('addDateStart').value,eVal=document.getElementById('addDateEnd').value;
@@ -380,9 +363,7 @@ function renderEventList(){var ct=document.getElementById('eventList');ct.innerH
       var bs=rw.querySelectorAll('.evt-btn');bs[0].addEventListener('click',function(){showEditModal(ev.idx)});
       bs[1].addEventListener('click',function(){if(confirm('Excluir "'+ev.t+'"?')){EVENTS.splice(ev.idx,1);persist();render();renderEventList();renderPilarList();updateContext();toast('Excluído ✓')}});dv.appendChild(rw)});ct.appendChild(dv)})}
 function toast(msg){var el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(function(){el.classList.remove('show')},2400)}
-(function init(){function doInit(){document.getElementById('loadFileInput').value='';document.getElementById('importFile').value='';PILARES=loadPilaresForTab(ACTIVE_TAB);EVENTS=loadEventsForTab(ACTIVE_TAB);visible=new Set(PILARES.map(function(p){return p.key}));document.getElementById('tabGeral').classList.toggle('active',ACTIVE_TAB==='geral');document.getElementById('tabWp').classList.toggle('active',ACTIVE_TAB==='wp');rebuildPilarSelects();setupAutoReload();updateLastReload();render();updateFileIndicator();updateContext();renderEventList()}
-  var tries=0;function check(){if((window._geralLoaded!==undefined&&window._wpLoaded!==undefined)||tries>30){doInit()}else{tries++;setTimeout(check,100)}}check();
-})();
+(function init(){document.getElementById('loadFileInput').value='';document.getElementById('importFile').value='';PILARES=loadPilaresForTab(ACTIVE_TAB);EVENTS=loadEventsForTab(ACTIVE_TAB);visible=new Set(PILARES.map(function(p){return p.key}));document.getElementById('tabGeral').classList.toggle('active',ACTIVE_TAB==='geral');document.getElementById('tabWp').classList.toggle('active',ACTIVE_TAB==='wp');rebuildPilarSelects();updateLastReload();render();updateFileIndicator();updateContext();renderEventList()})();
 </script>
 </body>
 </html>
